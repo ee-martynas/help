@@ -30,12 +30,14 @@ package_check=$(dpkg-query -W --showformat='${Status}\n' iptables-persistent 2>/
 
 check_dependencies(){
 	if [ -z "$package_check" ]; then
-		install_package iptables-persistent
+		echo "Skipping. Install expects interaction."
+		echo "Firewall is updated changes are not permanent !!"
+#		install_package iptables-persistent
 	fi
 }
 
 install_package(){
-	# sudo apt-get install $1
+	sudo apt-get install $1
 	# check if package is now installed. If not then exit
 }
 
@@ -63,7 +65,7 @@ $IP_4 -A INPUT -p all -m state --state ESTABLISHED,RELATED -j ACCEPT
 $IP_4 -A INPUT -i lo -j ACCEPT
 
 echo "Management ..."
-$IPTABLES -A INPUT -s 0.0.0.0/0 -j ACCEPT       # Remove this rule if you have your own ip in place
+$IP_4 -A INPUT -s 0.0.0.0/0 -j ACCEPT       # Remove this rule if you have your own ip in place
 
 echo "Miscellaneous ..."
 $IP_4 -A INPUT -m limit --limit 1/min -j LOG --log-prefix "IPTables4_INPUT_Drop: " --log-level 4
