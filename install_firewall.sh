@@ -25,31 +25,86 @@
 #codename=`lsb_release -cs`
 
 distro=`lsb_release -is`
-package_check=$(dpkg-query -W --showformat='${Status}\n' iptables-persistent|grep "install ok installed")
+package_check=$(dpkg-query -W --showformat='${Status}\n' iptables-persistent 2>/dev/null | grep "install ok installed")
 
 
 check_dependencies(){
-	if [ "" != "$package_check" ]; then
+	if [ -z "$package_check" ]; then
 		install_package iptables-persistent
 	fi
 }
 
 install_package(){
-	sudo apt-get install $1
+	# sudo apt-get install $1
 	# check if package is now installed. If not then exit
 }
 
 install_firewall(){
 	check_dependencies
-	echo "firewall-script-rules" > /etc/firewall.sh
+	cat > /etc/firewall.sh <<'EOL'
+#!/bin/bash
+
+# Variables
+IP_4=/sbin/iptables
+IP_6=/sbin/ip6tables
+
+
+##################################
+########### IPv4 rules ###########
+##################################
+
+echo "Flushing old IPv4 firewall rules ..."
+$IP_4 -F
+$IP_4 -P INPUT DROP
+
+echo "Setting up IPv4 firewall rules ..."
+echo "  Local ..."
+$IP_4 -A INPUT -p all -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IP_4 -A INPUT -i lo -j ACCEPT
+
+echo "Management ..."
+$IPTABLES -A INPUT -s 0.0.0.0/0 -j ACCEPT       # Remove this rule if you have your own ip in place
+
+echo "Miscellaneous ..."
+$IP_4 -A INPUT -m limit --limit 1/min -j LOG --log-prefix "IPTables4_INPUT_Drop: " --log-level 4
+$IP_4 -A OUTPUT -m limit --limit 1/min -j LOG --log-prefix "IPTables4_OUTPUT_All: " --log-level 4
+$IP_4 -A INPUT -p ICMP -j ACCEPT
+
+echo "Saving IPv4 rules ..."
+$IP_4-save > /etc/iptables/rules.v4
+
+##################################
+########### IPv6 rules ###########
+##################################
+
+echo "Flushing old IPv6 firewall rules ..."
+$IP_6 -F
+$IP_6 -P INPUT DROP
+
+echo "Setting up IPv6 firewall rules ..."
+echo "  Local ..."
+$IP_6 -A INPUT -p all -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IP_6 -A INPUT -i lo -j ACCEPT
+
+echo "Miscellaneous ..."
+$IP_6 -A INPUT -m limit --limit 1/min -j LOG --log-prefix "IPTables6_INPUT_Drop: " --log-level 4
+$IP_6 -A OUTPUT -m limit --limit 1/min -j LOG --log-prefix "IPTables6_OUTPUT_All: " --log-level 4
+$IP_6 -A INPUT -p IPv6-ICMP -j ACCEPT
+
+echo "Saving IPv6 rules ..."
+$IP_6-save > /etc/iptables/rules.v6
+
+EOL
+
 	sudo sh /etc/firewall.sh
-	# Install script self remove
+	rm $0
 }
 
 case $distro in
 	Debian)
 		;;
 	Ubuntu)
+		install_firewall
 		;;
 	*)
 		;;
