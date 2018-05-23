@@ -3,7 +3,7 @@ The purpose of these files is to speed up the look and feel experience on your n
 * vimrc             - This makes vim fancy and shiny  
 * bashrc            - This adds glitter to bash
 * install_firewall  - Base script to get started with firewall configuration.
-                      Usage:
-                          wget https://raw.githubusercontent.com/ee-martynas/help/master/install_firewall.sh
-                          sh install_firewall.sh
-
+```
+wget https://raw.githubusercontent.com/ee-martynas/help/master/install_firewall.sh
+sh install_firewall.sh
+```
