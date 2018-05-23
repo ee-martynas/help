@@ -30,16 +30,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'		# Default color
 
-release_check=$(dpkg-query -W --showformat='${Status}\n' lsb-release 2>/dev/null | grep "install ok installed")
-package_check=$(dpkg-query -W --showformat='${Status}\n' iptables-persistent 2>/dev/null | grep "install ok installed")
-utils_check=$(dpkg-query -W --showformat='${Status}\n' debconf 2>/dev/null | grep "install ok installed")
+check_package(){
+	dpkg-query -W --showformat='${Status}\n' $1 2>/dev/null | grep "install ok installed" >/dev/null
+	echo $?
+}
 
 check_dependencies(){
-	if [ -z "$utils_check" ]; then
+	if [ $(check_package debconf) -ne 0 ]; then
 		install_package debconf
 	fi
 
-	if [ -z "$package_check" ]; then
+	if [ $(check_package iptables-persistent) -ne 0 ]; then
 		echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections
 		echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections
 		install_package iptables-persistent
@@ -49,7 +50,13 @@ check_dependencies(){
 install_package(){
 	echo "${YELLOW}Package $1 not installed. Installing it now.${NC}"
 	sudo apt-get install -y $1
-	echo "${GREEN}Package $1 installed${NC}"
+	
+	if [ $(check_package $1) -ne 0 ]; then
+		echo "${RED}Failed to install $1.${NC}"
+		exit 1
+	else
+		echo "${GREEN}Package $1 installed${NC}"
+	fi
 }
 
 install_firewall(){
@@ -115,7 +122,7 @@ EOL
 	rm $0
 }
 
-if [ -z "$release_check" ]; then
+if [ $(check_package lsb-release) -ne 0 ]; then
         install_package lsb-release
 fi
 
@@ -126,6 +133,7 @@ case $distro in
 		# Tested on:
 		#   Debian 7 and 9
 		#   Ubuntu 12.04, 14.04 and 16.04
+		sudo apt-get update
 		install_firewall
 		;;
 	*)
