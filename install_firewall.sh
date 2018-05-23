@@ -116,6 +116,7 @@ case $distro in
 	Debian)
 		;;
 	Ubuntu)
+		# Tested 12 14 16
 		install_firewall
 		;;
 	*)
