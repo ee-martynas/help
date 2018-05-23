@@ -30,11 +30,11 @@ NC='\033[0m'		# Default color
 
 distro=`lsb_release -is`
 package_check=$(dpkg-query -W --showformat='${Status}\n' iptables-persistent 2>/dev/null | grep "install ok installed")
-utils_check=$(dpkg-query -W --showformat='${Status}\n' debconf-utils 2>/dev/null | grep "install ok installed")
+utils_check=$(dpkg-query -W --showformat='${Status}\n' debconf 2>/dev/null | grep "install ok installed")
 
 check_dependencies(){
 	if [ -z "$utils_check" ]; then
-		install_package debconf-utils
+		install_package debconf
 	fi
 
 	if [ -z "$package_check" ]; then
