@@ -24,11 +24,13 @@
 #release=`lsb_release -rs`
 #codename=`lsb_release -cs`
 
-GREEN='\033[0;32m'	# Text in green
-RED='\033[0;31m'	# Text in red
+# Colors used when printing out messages
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
 NC='\033[0m'		# Default color
 
-distro=`lsb_release -is`
+release_check=$(dpkg-query -W --showformat='${Status}\n' lsb-release 2>/dev/null | grep "install ok installed")
 package_check=$(dpkg-query -W --showformat='${Status}\n' iptables-persistent 2>/dev/null | grep "install ok installed")
 utils_check=$(dpkg-query -W --showformat='${Status}\n' debconf 2>/dev/null | grep "install ok installed")
 
@@ -45,6 +47,7 @@ check_dependencies(){
 }
 
 install_package(){
+	echo "${YELLOW}Package $1 not installed. Installing it now.${NC}"
 	sudo apt-get install -y $1
 	echo "${GREEN}Package $1 installed${NC}"
 }
@@ -112,11 +115,17 @@ EOL
 	rm $0
 }
 
+if [ -z "$release_check" ]; then
+        install_package lsb-release
+fi
+
+distro=`lsb_release -is`
+
 case $distro in
-	Debian)
-		;;
-	Ubuntu)
-		# Tested 12 14 16
+	Debian|Ubuntu)
+		# Tested on:
+		#   Debian 7 and 9
+		#   Ubuntu 12.04, 14.04 and 16.04
 		install_firewall
 		;;
 	*)
