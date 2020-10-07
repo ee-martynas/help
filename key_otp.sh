@@ -28,6 +28,7 @@ serial=$(get_serial $otp)
 id=$((1 + RANDOM % 10000))
 nonce=($(sha1sum <<< $otp))
 
+# Doc: https://developers.yubico.com/yubikey-val/Getting_Started_Writing_Clients.html
 curl -XGET "https://api.yubico.com/wsapi/2.0/verify?id=$id&otp=$otp&nonce=$nonce"
 
 if [ "$debug" ]; then
