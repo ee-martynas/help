@@ -2,8 +2,11 @@
 
 debug=$1
 
-read -sp "Please touch your Yubikey:" -e otp
-echo
+#read -sp "Please touch your Yubikey:" -e otp
+#echo
+
+otp=$2
+
 
 function decode {
 	index=$(expr index "$cipher" $1 )
